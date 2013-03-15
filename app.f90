@@ -10,7 +10,7 @@
 	   rank = this_image()
 	   num_procs = num_images()
 
- 	   call caf_file_open(10,"file", CAF_MODE_RDONLY, 4,(/3,3,3/), 4, 1)
+ 	   call caf_file_open(10,"test_file", CAF_MODE_RDONLY, 4,(/3,3,3/), 4, 1)
 	   buff(:) = -1 
 
 	   if (rank == 1) then
