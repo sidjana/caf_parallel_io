@@ -47,8 +47,7 @@
 	}
 
 
-	//non-strided operations
-	//TODO: add support for non-unit stride along each dimension
+	/**** non-strided operations ****/
 	void caf_file_read_(int* unit, int* rec_lb, int* rec_ub, int* buf, int* rank , int * len)
 	{
 		MPI_Status status;
@@ -62,7 +61,6 @@
 	}
 
 
-	//TODO: add support for non-unit stride along each dimension
 	void caf_file_write_(int* unit, int* rec_lb, int* rec_ub, int* buf, int* rank , int * len)
 	{
 		MPI_Status status;
@@ -76,13 +74,56 @@
 	}
 
 
+	void caf_set_file_view(int idx, int* rec_lb, int* rec_ub)
+	{
+		int subsizes[MAX_DIM];
+		int i;
+		MPI_Datatype ftype;
 
-	// strided operations
+		for (i = 0 ; i < map[idx].ndim-1; i++)
+		{
+	           subsizes[i] = rec_ub[i]-rec_lb[i] + 1;
+		   rec_lb[i]--; // 0-shift adjustment
+		}
+
+           	MPI_Type_create_subarray(map[idx].ndim-1, map[idx].dims, subsizes,
+      				         rec_lb, MPI_ORDER_FORTRAN, map[idx].etype,
+                			 &ftype);
+		MPI_Type_commit(&ftype);
+		MPI_File_set_view(map[idx].fhdl, 0, map[idx].etype,
+			         ftype, "native", MPI_INFO_NULL);
+	}
+
+	/**** end of non-strided operations ****/
+
+
+
+	/**** strided operations ****/
 	void caf_file_read_str_(int* unit, int* rec_lb, int* rec_ub, int* str, int* buf, int* rank , int * len)
 	{
 		int idx=get_fh_idx(*unit);
 		MPI_Status status;
 
+		caf_set_file_view_str(idx, rec_lb, rec_ub, str);
+
+		MPI_File_read_all(map[idx].fhdl, buf, *len,
+		                      map[idx].etype, &status);
+	}
+
+
+	void caf_file_write_str_(int* unit, int* rec_lb, int* rec_ub, int* str, int* buf, int* rank , int * len)
+	{
+		int idx=get_fh_idx(*unit);
+		MPI_Status status;
+
+		caf_set_file_view_str(idx, rec_lb, rec_ub, str);
+
+		MPI_File_write_all(map[idx].fhdl, buf, *len,
+		                      map[idx].etype, &status);
+	}
+
+	void caf_set_file_view_str(int idx, int* rec_lb, int* rec_ub, int* str)
+	{
 		int blklens[3];
 		MPI_Aint indices[3];
 		MPI_Datatype old_types[3];
@@ -134,33 +175,12 @@
 		MPI_File_set_view(map[idx].fhdl, 0, map[idx].etype,
 			         stype, "native", MPI_INFO_NULL);
 
-		MPI_File_read_all(map[idx].fhdl, buf, *len,
-		                      map[idx].etype, &status);
 	}
 
+	/**** end of strided operations ****/
 
 
 	// support functions
-	void caf_set_file_view(int idx, int* rec_lb, int* rec_ub)
-	{
-		int subsizes[MAX_DIM];
-		int i;
-		MPI_Datatype ftype;
-
-		for (i = 0 ; i < map[idx].ndim-1; i++)
-		{
-	           subsizes[i] = rec_ub[i]-rec_lb[i] + 1;
-		   rec_lb[i]--; // 0-shift adjustment
-		}
-
-           	MPI_Type_create_subarray(map[idx].ndim-1, map[idx].dims, subsizes,
-      				         rec_lb, MPI_ORDER_FORTRAN, map[idx].etype,
-                			 &ftype);
-		MPI_Type_commit(&ftype);
-		MPI_File_set_view(map[idx].fhdl, 0, map[idx].etype,
-			         ftype, "native", MPI_INFO_NULL);
-	}
-
 
 	int get_fh_idx(int unit)
 	{
