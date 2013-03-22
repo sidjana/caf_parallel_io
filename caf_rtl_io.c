@@ -20,7 +20,7 @@
 
 	int counter=0;
 
-	// Note: ndim has a val 1 more than the actual num of dim. This is to allow the third dim to grow
+	// Note: dims has extents for all dimensions but the last
 	void caf_file_open_(int* unit, char* file_name, int* access, int* ndim, int* dims, int* recl, int* async)
 	{
 		map[counter].unit = *unit;
@@ -131,10 +131,11 @@
 		int extent, offset=0, disp= map[idx].recl;
 		int lb, ub, count, i;
 
-		for (i = 0 ; i < map[idx].ndim-1 ; i++)
+		for (i = 0 ; i < map[idx].ndim ; i++)
 		{
 		
-			lb = rec_lb[i]-1; 
+			// 0-shift adjustment 
+			lb = rec_lb[i]-1;
 			ub = rec_ub[i]-1;
 
 			if (i>0)
@@ -161,11 +162,22 @@
 			old_types[1] = vtype;
 			indices[1] = offset;
 
-			blklens[2] = 1;
-			old_types[2] = MPI_UB;
-			indices[2] = extent;
+			/* for the last dim,the extent of the last dimension is not needed. 
+			 * A file should be allowed to grow along the last dimension, 
+			 * and therefore a user is not expected to enter the last extent while
+			 * OPENing a file.
+			 */
 
-			MPI_Type_struct(3, blklens, indices, old_types, &stype);
+			if ( i != map[idx].ndim - 1 )
+			{
+			   blklens[2] = 1;
+			   old_types[2] = MPI_UB;
+			   indices[2] = extent;
+			   MPI_Type_struct(3, blklens, indices, old_types, &stype);
+			} else
+			{
+			   MPI_Type_struct(2, blklens, indices, old_types, &stype); 
+			}
 			MPI_Type_commit(&stype);
 
 			etype = stype;
