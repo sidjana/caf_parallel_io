@@ -48,7 +48,7 @@
 
 
 	/**** non-strided operations ****/
-	void caf_file_read_(int* unit, int* rec_lb, int* rec_ub, int* buf, int* rank , int * len)
+	void caf_file_read_(int* unit, int* rec_lb, int* rec_ub, int* buf, int * len)
 	{
 		MPI_Status status;
 		int idx=get_fh_idx(*unit);
@@ -61,7 +61,7 @@
 	}
 
 
-	void caf_file_write_(int* unit, int* rec_lb, int* rec_ub, int* buf, int* rank , int * len)
+	void caf_file_write_(int* unit, int* rec_lb, int* rec_ub, int* buf, int * len)
 	{
 		MPI_Status status;
 		int idx=get_fh_idx(*unit);
@@ -99,7 +99,7 @@
 
 
 	/**** strided operations ****/
-	void caf_file_read_str_(int* unit, int* rec_lb, int* rec_ub, int* str, int* buf, int* rank , int * len)
+	void caf_file_read_str_(int* unit, int* rec_lb, int* rec_ub, int* str, int* buf, int * len)
 	{
 		int idx=get_fh_idx(*unit);
 		MPI_Status status;
@@ -111,7 +111,7 @@
 	}
 
 
-	void caf_file_write_str_(int* unit, int* rec_lb, int* rec_ub, int* str, int* buf, int* rank , int * len)
+	void caf_file_write_str_(int* unit, int* rec_lb, int* rec_ub, int* str, int* buf, int * len)
 	{
 		int idx=get_fh_idx(*unit);
 		MPI_Status status;
