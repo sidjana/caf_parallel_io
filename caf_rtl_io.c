@@ -2,6 +2,7 @@
 	#include<mpi.h>
 	#include<caf_rtl_io.h>
 	#include<stdio.h>
+	#include<stdlib.h>
 
 	#define MAX_DIM 15
 	#define MAX_FILE_CNT 10  // Tolerate upto 10 file OPEN operations
@@ -23,17 +24,21 @@
 	// Note: dims has extents for all dimensions but the last
 	void caf_file_open_(int* unit, char* file_name, int* access, int* ndim, int* dims, int* recl, int* async)
 	{
+		int i=0;
 		map[counter].unit = *unit;
-		/*For OpenMPI, "MPI_MODE_RDONLY" is 2 and "MPI_MODE_WRONLY" is 4*/
 		map[counter].access = *access;
 		map[counter].ndim = *ndim;
-		map[counter].dims = dims;
+		map[counter].dims = (int*)malloc(sizeof(int)*(*ndim));
+		for (i = 0;  i  < *ndim ; i ++)
+		{
+			map[counter].dims[i]=dims[i];
+		}
 		map[counter].async = *async;
 		map[counter].recl = *recl;
 
 		MPI_Type_contiguous(*recl, MPI_BYTE, &(map[counter].etype));
 		MPI_Type_commit(&(map[counter].etype));
-		MPI_File_open(MPI_COMM_WORLD, file_name , *access , MPI_INFO_NULL,  &(map[counter].fhdl));
+		MPI_File_open(MPI_COMM_WORLD, file_name , MPI_MODE_RDWR , MPI_INFO_NULL,  &(map[counter].fhdl));
 
 		//TODO: handling dynamic opening and closing of files (add a linked list)
 		counter++;
@@ -50,26 +55,32 @@
 	/**** non-strided operations ****/
 	void caf_file_read_(int* unit, int* rec_lb, int* rec_ub, int* buf, int * len)
 	{
+		MPI_Datatype b_type;
 		MPI_Status status;
 		int idx=get_fh_idx(*unit);
 
 		caf_set_file_view(idx, rec_lb, rec_ub);
+		MPI_Type_contiguous(*len, MPI_BYTE, &b_type);
+		MPI_Type_commit(&b_type);
 
-		MPI_File_read_all(map[idx].fhdl, buf, *len,
-		                      map[idx].etype, &status);
+		MPI_File_read_all(map[idx].fhdl, buf, 1,
+		                      b_type, &status);
 	
 	}
 
 
 	void caf_file_write_(int* unit, int* rec_lb, int* rec_ub, int* buf, int * len)
 	{
+		MPI_Datatype b_type;
 		MPI_Status status;
 		int idx=get_fh_idx(*unit);
 
 		caf_set_file_view(idx, rec_lb, rec_ub);
+		MPI_Type_contiguous(*len, MPI_BYTE, &b_type);
+		MPI_Type_commit(&b_type);
 
-		MPI_File_write_all(map[idx].fhdl, buf, *len,
-		                      map[idx].etype, &status);
+		MPI_File_write_all(map[idx].fhdl, buf, 1,
+		                      b_type, &status);
 	
 	}
 
@@ -80,13 +91,14 @@
 		int i;
 		MPI_Datatype ftype;
 
-		for (i = 0 ; i < map[idx].ndim-1; i++)
+		for (i = 0 ; i < map[idx].ndim; i++)
 		{
-	           subsizes[i] = rec_ub[i]-rec_lb[i] + 1;
 		   rec_lb[i]--; // 0-shift adjustment
+		   rec_ub[i]--;
+	           subsizes[i] = rec_ub[i]-rec_lb[i] + 1;
 		}
 
-           	MPI_Type_create_subarray(map[idx].ndim-1, map[idx].dims, subsizes,
+           	MPI_Type_create_subarray(map[idx].ndim, map[idx].dims, subsizes,
       				         rec_lb, MPI_ORDER_FORTRAN, map[idx].etype,
                 			 &ftype);
 		MPI_Type_commit(&ftype);
@@ -101,25 +113,31 @@
 	/**** strided operations ****/
 	void caf_file_read_str_(int* unit, int* rec_lb, int* rec_ub, int* str, int* buf, int * len)
 	{
-		int idx=get_fh_idx(*unit);
+		MPI_Datatype b_type;
 		MPI_Status status;
+		int idx=get_fh_idx(*unit);
 
 		caf_set_file_view_str(idx, rec_lb, rec_ub, str);
+		MPI_Type_contiguous(*len, MPI_BYTE, &b_type);
+		MPI_Type_commit(&b_type);
 
-		MPI_File_read_all(map[idx].fhdl, buf, *len,
-		                      map[idx].etype, &status);
+		MPI_File_read_all(map[idx].fhdl, buf, 1,
+		                      b_type, &status);
 	}
 
 
 	void caf_file_write_str_(int* unit, int* rec_lb, int* rec_ub, int* str, int* buf, int * len)
 	{
-		int idx=get_fh_idx(*unit);
+		MPI_Datatype b_type;
 		MPI_Status status;
+		int idx=get_fh_idx(*unit);
 
 		caf_set_file_view_str(idx, rec_lb, rec_ub, str);
+		MPI_Type_contiguous(*len, MPI_BYTE, &b_type);
+		MPI_Type_commit(&b_type);
 
-		MPI_File_write_all(map[idx].fhdl, buf, *len,
-		                      map[idx].etype, &status);
+		MPI_File_write_all(map[idx].fhdl, buf, 1,
+		                      b_type, &status);
 	}
 
 	void caf_set_file_view_str(int idx, int* rec_lb, int* rec_ub, int* str)
