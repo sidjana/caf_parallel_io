@@ -1,8 +1,34 @@
+/*
+ Runtime library for Parallel I/O implementation
 
-	#include<mpi.h>
+ Copyright (C) 2009-2012 University of Houston.
+
+ This program is free software; you can redistribute it and/or modify it
+ under the terms of version 2 of the GNU General Public License as
+ published by the Free Software Foundation.
+
+ This program is distributed in the hope that it would be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+ Further, this software is distributed without any warranty that it is
+ free of the rightful claim of any third person regarding infringement
+ or the like.  Any license provided herein, whether implied or
+ otherwise, applies only to this software file.  Patent licenses, if
+ any, provided herein do not apply to combinations of this program with
+ other software, or any other product whatsoever.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write the Free Software Foundation, Inc., 59
+ Temple Place - Suite 330, Boston MA 02111-1307, USA.
+
+ Contact information:
+ http://www.cs.uh.edu/~hpctools
+*/
 	#include<caf_rtl_io.h>
 	#include<stdio.h>
 	#include<stdlib.h>
+	#include<mpi.h>
 
 	#define MAX_DIM 15
 	#define MAX_FILE_CNT 10  // Tolerate upto 10 file OPEN operations
@@ -38,9 +64,9 @@
 
 		MPI_Type_contiguous(*recl, MPI_BYTE, &(map[counter].etype));
 		MPI_Type_commit(&(map[counter].etype));
-		MPI_File_open(MPI_COMM_WORLD, file_name , MPI_MODE_RDWR , MPI_INFO_NULL,  &(map[counter].fhdl));
+		MPI_File_open(MPI_COMM_WORLD, file_name , *access , MPI_INFO_NULL,  &(map[counter].fhdl));
 
-		//TODO: handling dynamic opening and closing of files (add a linked list)
+		//TODO: handling multiple opening and closing of files (add a linked list)
 		counter++;
 	}
 
@@ -51,6 +77,10 @@
 		MPI_File_close(&(map[idx].fhdl));
 	}
 
+	void caf_file_delete_(char* file_nm)
+	{
+		MPI_File_delete(file_nm, MPI_INFO_NULL);
+	}
 
 	/**** non-strided operations ****/
 	void caf_file_read_(int* unit, int* rec_lb, int* rec_ub, int* buf, int * len)
@@ -166,7 +196,6 @@
 			if(str[i] != 1)
 			{count++;
 			}
-			printf("%d, disp:%d,off:%d,ext:%d,cnt:%d\n",i,disp, offset, extent,count);
 			
 			
 			MPI_Type_vector(count, 1, str[i], etype, &vtype);

@@ -1,9 +1,10 @@
 
+
+	include 'mpif.h'
+
+
+	integer :: CAF_MODE_RDONLY = MPI_MODE_RDONLY
+	integer :: CAF_MODE_WRONLY = MPI_MODE_WRONLY
+	integer :: CAF_MODE_RDWR = MPI_MODE_RDWR
+	integer :: CAF_MODE_CREATE = MPI_MODE_CREATE
  
-	 integer CAF_MODE_RDONLY
-	 integer CAF_MODE_WRONLY, CAF_MODE_RDWR
-
-	 parameter (CAF_MODE_RDONLY=2)
-	 parameter (CAF_MODE_WRONLY=4)
-	 parameter (CAF_MODE_RDWR=8)
-
