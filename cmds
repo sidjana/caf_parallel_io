@@ -1,4 +1,11 @@
+-- Without timing
+
 uhcc -g -c caf_rtl_io.c -I./ -I/opt/openmpi/gnu/1.6.3/include -pthread -Wl,-rpath -Wl,/opt/openmpi/gnu/1.6.3/lib -L/opt/openmpi/gnu/1.6.3/lib -lmpi -ldl -lm -lnuma -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl
 
  uhcaf -g caf_rtl_io.o app.f90 -I/opt/openmpi/gnu/1.6.3/include -pthread -I/opt/openmpi/gnu/1.6.3/lib -Wl,-rpath -Wl,/opt/openmpi/gnu/1.6.3/lib -L/opt/openmpi/gnu/1.6.3/lib -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -lnuma -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl
 
+-- Timing cmds:
+
+uhcc -g -c caf_rtl_io.c rtc.c -I./ -I/opt/openmpi/gnu/1.6.3/include -pthread -Wl,-rpath -Wl,/opt/openmpi/gnu/1.6.3/lib -L/opt/openmpi/gnu/1.6.3/lib -lmpi -ldl -lm -lnuma -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl -ftpp -DARCH_X86_64 
+
+uhcaf -g caf_rtl_io.o cg_2d.version1.f90  rtc.o -o ver1 -ftpp -DINNER -DXMAX_=1000 -DZMAX_=500 -I/opt/openmpi/gnu/1.6.3/include -pthread -I/opt/openmpi/gnu/1.6.3/lib -Wl,-rpath -Wl,/opt/openmpi/gnu/1.6.3/lib -L/opt/openmpi/gnu/1.6.3/lib -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -lnuma -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl

@@ -204,7 +204,7 @@
       integer           :: px,pz,me,npz
       integer           :: i
       integer, parameter:: lx=4,lz=4,nt=100
-      integer, parameter:: xmin=1,xmax=1000,zmin=1,zmax=500
+      integer, parameter:: xmin=1,xmax=XMAX_,zmin=1,zmax=ZMAX_
       real,parameter    :: dx=4,dz=4,fmax=15,c=3000
       integer           :: it,xsource,zsource,l,z
       integer           :: x1,x2,x3,x4,x5,x6,z1,z2,z3,z4,z5
@@ -229,7 +229,12 @@
 #endif
 
       integer :: x_size, z_size, x_size_total, z_size_total
-      integer :: rec_lb(2), rec_ub(2), rec_str(2)
+      integer :: rec_lb(2), rec_ub(2)
+
+      integer(kind=8)   :: crtc, srtc,ertc,res
+      real(kind=8)      :: io_rtc, full_rtc, rtmp
+
+      call get_rtc(crtc)
 
       npz = num_images() / npx
 
@@ -322,8 +327,8 @@
                 if (rmax > max_u) max_u = rmax
                 if (rmin < min_u) min_u = rmin
             end do
-            write (*,'(i4,f8.1,f8.1,f8.1,f8.1)'),                       &
-                   it, max_u, min_u, source(it), dt
+!            write (*,'(i4,f8.1,f8.1,f8.1,f8.1)'),                       &
+!                   it, max_u, min_u, source(it), dt
         end if
 
         if (px == ix .and. pz == iz) then
@@ -458,37 +463,30 @@
       
       me = this_image()
 
-      ! TODO: support I/O for coarray data 
-        if (me == 1) then
-            open(1,file='snap.H',form='formatted')
-            write(1,*)'in=snap.H@'
-            write(char,*)(xmax-xmin+2*lx+1)
-            write(1,*)'n1='//trim(adjustl(char))
-            write(char,*)(zmax-zmin+2*lz+1)
-            write(1,*)'n2='//trim(adjustl(char))
-            write(char,*)1
-            write(1,*)'n3='//trim(adjustl(char))
-            write(char,*)dx
-            write(1,*)'d1='//trim(adjustl(char))
-            write(char,*)dz
-            write(1,*)'d2='//trim(adjustl(char))
-            write(1,*)'d3=1'
-            write(1,*)'o1=0'
-            write(1,*)'o2=0.'
-            write(1,*)'o3=0.'
-            write(1,*)'esize=4'
-            write(1,*)'data_format=native_float'
-            print*,'n1=',(xmax-xmin+2*lx+1)&
-                  ,'n2=',(zmax-zmin+2*lz+1)
-            close(1)
-!            open(1,file='snap.H@',access='direct',&
-!                   recl=4*(xmax-xmin+2*lx+1)&
-!                         *(zmax-zmin+2*lz+1))
-!            write(1,rec=1)u
-!             close(1)
-         end if 
-
-	sync all
+!      ! TODO: support I/O for coarray data 
+!        if (me == 1) then
+!            open(1,file='snap.H',form='formatted')
+!            write(1,*)'in=snap.H@'
+!            write(char,*)(xmax-xmin+2*lx+1)
+!            write(1,*)'n1='//trim(adjustl(char))
+!            write(char,*)(zmax-zmin+2*lz+1)
+!            write(1,*)'n2='//trim(adjustl(char))
+!            write(char,*)1
+!            write(1,*)'n3='//trim(adjustl(char))
+!            write(char,*)dx
+!            write(1,*)'d1='//trim(adjustl(char))
+!            write(char,*)dz
+!            write(1,*)'d2='//trim(adjustl(char))
+!            write(1,*)'d3=1'
+!            write(1,*)'o1=0'
+!            write(1,*)'o2=0.'
+!            write(1,*)'o3=0.'
+!            write(1,*)'esize=4'
+!            write(1,*)'data_format=native_float'
+!            print*,'n1=',(xmax-xmin+2*lx+1)&
+!                  ,'n2=',(zmax-zmin+2*lz+1)
+!            close(1)
+!         end if 
 
          !  using CAF Parallel I/O
 	     x_size = (xmax-xmin+2*lx+1)
@@ -502,8 +500,8 @@
 	     rec_ub(1)=px*x_size
 	     rec_ub(2)=pz*z_size
 
-	     print *, this_image(), "rec_lb:", rec_lb
-	     print *, this_image(), "rec_ub:", rec_ub
+
+	     call get_rtc(srtc)
 
              call caf_file_open(1, 'out.ver1', &
 	            MPI_MODE_WRONLY + MPI_MODE_CREATE, 2, &
@@ -514,9 +512,18 @@
 	     		    rec_ub, u, &
 	     		    4*x_size*z_size)
 
-	     print *, "closing", me
-	     call caf_file_close(1);
-	     print *, "closed", me
+	     call caf_file_close(1)
+
+	     if (me == 1 ) then
+	       call get_rtc(ertc)
+	       call get_rtc_res(res)
+	       rtmp = res
+	       io_rtc=(ertc-srtc)/rtmp
+	       full_rtc=(ertc-crtc)/rtmp
+	       print *, io_rtc*1000000.0 , full_rtc*1000000.0 , &
+	       		(io_rtc/full_rtc)*100 
+	     end if
+
 
 
 ! 'stop' in the next stmt has been commented since G95 does not exit images cleanly.
