@@ -204,7 +204,7 @@
       integer           :: px,pz,me,npz
       integer           :: i
       integer, parameter:: lx=4,lz=4,nt=100
-      integer, parameter:: xmin=1,xmax=1000,zmin=1,zmax=500
+      integer, parameter:: xmin=1,xmax=XMAX_,zmin=1,zmax=ZMAX_
       real,parameter    :: dx=4,dz=4,fmax=15,c=3000
       integer           :: it,xsource,zsource,l,z
       integer           :: x1,x2,x3,x4,x5,x6,z1,z2,z3,z4,z5
@@ -503,6 +503,7 @@
 	     total_blks = npx*z_size_total
 
 	     call get_rtc(srtc)
+	     sync all
 
              call caf_file_open(1, 'out.ver2', &
 	            MPI_MODE_WRONLY + MPI_MODE_CREATE, 1, &
@@ -521,8 +522,8 @@
 	       rtmp = res
 	       io_rtc=(ertc-srtc)/rtmp
 	       full_rtc=(ertc-crtc)/rtmp
-	       print *, io_rtc*1000000.0 , full_rtc*1000000.0 , &
-	       		(io_rtc/full_rtc)*100 
+	       print *, num_images(), io_rtc*1000000.0 , full_rtc*1000000.0 , &
+	       		(io_rtc/full_rtc)*100,"%" 
 	     end if
 
 

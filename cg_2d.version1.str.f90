@@ -503,6 +503,7 @@
 	     rec_str = (/1,1/)
 
 	     call get_rtc(srtc)
+	     sync all
 
              call caf_file_open(1, 'out.ver1.str', &
 	            MPI_MODE_WRONLY + MPI_MODE_CREATE, 2, &
@@ -521,8 +522,8 @@
 	       rtmp = res
 	       io_rtc=(ertc-srtc)/rtmp
 	       full_rtc=(ertc-crtc)/rtmp
-	       print *, io_rtc*1000000.0 , full_rtc*1000000.0 , &
-	       		(io_rtc/full_rtc)*100 
+	       print *, num_images(), io_rtc*1000000.0 , full_rtc*1000000.0 , &
+	       		(io_rtc/full_rtc)*100,"%" 
 	     end if
 
 
