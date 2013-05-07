@@ -37,8 +37,6 @@
        
            integer            :: i,k
            real               :: lap,coef0
-
-
            coef0=coefx(0)+coefz(0)
            do k=zmin,zmax
                if ((k>=z3).and.(k<=z4)) then
@@ -198,19 +196,17 @@
       use cg_2d
       implicit none
 
-      include 'caf_io.h'
-
       integer,parameter :: npx=2
       integer           :: px,pz,me,npz
       integer           :: i
       integer, parameter:: lx=4,lz=4,nt=100
-      integer, parameter:: xmin=1,xmax=XMAX_,zmin=1,zmax=ZMAX_
+      integer, parameter:: xmin=1,xmax=1000,zmin=1,zmax=500
       real,parameter    :: dx=4,dz=4,fmax=15,c=3000
       integer           :: it,xsource,zsource,l,z
       integer           :: x1,x2,x3,x4,x5,x6,z1,z2,z3,z4,z5
       integer           :: im,ip,km,kp
       integer           :: ix, iz
-      integer           :: ub, lb
+      integer           :: ub
       real              :: dt
       real              :: source (nt)
       real              :: coefx(0:lx),coefz(0:lz)
@@ -228,6 +224,7 @@
       real              :: eta(xmin-1:xmax+1,zmin-1:zmax+1)[npx,1,*]
 #endif
 
+	character  image_str*1
       integer :: x_size, z_size, x_size_total, z_size_total
       integer :: rec_lb(2), rec_ub(2)
 
@@ -465,32 +462,17 @@
 
 	sync all
 
-     !  using CAF Parallel I/O
-	     x_size = (xmax-xmin+2*lx+1)
-	     z_size = (zmax-zmin+2*lz+1)
-             x_size_total = npx*x_size
-	     z_size_total = npz*z_size
+      ! Using independent I/O 
+	write(image_str,'(I1)') this_image()
+        open(1,file='out.'//image_str,access='direct',&
+               recl=4*(xmax-xmin+2*lx+1)              &
+                     *(zmax-zmin+2*lz+1))
+        print * , "number of bytes:", 4*(xmax-xmin+2*lx+1)*(zmax-zmin+2*lz+1) 
+        write(1,rec=1)u
+        close(1)
 
-	     rec_lb(1)=1+((px-1)*x_size)
-	     rec_lb(2)=1+((pz-1)*z_size)
+	sync all
 
-	     rec_ub(1)=px*x_size
-	     rec_ub(2)=pz*z_size
-
-
-	     call get_rtc(srtc)
-	     sync all
-
-             call caf_file_open(1, 'out.ver1', &
-	            MPI_MODE_WRONLY + MPI_MODE_CREATE, 2, &
-	     	    (/x_size_total, z_size_total/), &
-	     	     4, 1);
-
-	     call caf_file_write(1, rec_lb, &
-	     		    rec_ub, u, &
-	     		    4*x_size*z_size)
-
-	     call caf_file_close(1)
 
 	     if (me == 1 ) then
 	       call get_rtc(ertc)
@@ -501,7 +483,6 @@
 	       print *, num_images(), io_rtc*1000000.0 , full_rtc*1000000.0 , &
 	       		(io_rtc/full_rtc)*100,"%" 
 	     end if
-
 
 
 ! 'stop' in the next stmt has been commented since G95 does not exit images cleanly.

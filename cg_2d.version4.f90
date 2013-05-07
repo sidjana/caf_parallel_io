@@ -229,10 +229,10 @@
 #endif
 
       integer :: x_size, z_size, x_size_total, z_size_total
-      integer :: rec_lb(2), rec_ub(2)
-
       integer(kind=8)   :: crtc, srtc,ertc,res
       real(kind=8)      :: io_rtc, full_rtc, rtmp
+      real              :: sid(xmin-lx:xmax+lx, zmin-lz:zmax+lz)
+      integer :: j
 
       call get_rtc(crtc)
 
@@ -463,34 +463,48 @@
       
       me = this_image()
 
-	sync all
+!      ! TODO: support I/O for coarray data 
+!        if (me == 1) then
+!            open(1,file='snap.H',form='formatted')
+!            write(1,*)'in=snap.H@'
+!            write(char,*)(xmax-xmin+2*lx+1)
+!            write(1,*)'n1='//trim(adjustl(char))
+!            write(char,*)(zmax-zmin+2*lz+1)
+!            write(1,*)'n2='//trim(adjustl(char))
+!            write(char,*)1
+!            write(1,*)'n3='//trim(adjustl(char))
+!            write(char,*)dx
+!            write(1,*)'d1='//trim(adjustl(char))
+!            write(char,*)dz
+!            write(1,*)'d2='//trim(adjustl(char))
+!            write(1,*)'d3=1'
+!            write(1,*)'o1=0'
+!            write(1,*)'o2=0.'
+!            write(1,*)'o3=0.'
+!            write(1,*)'esize=4'
+!            write(1,*)'data_format=native_float'
+!            print*,'n1=',(xmax-xmin+2*lx+1)&
+!                  ,'n2=',(zmax-zmin+2*lz+1)
+!            close(1)
+!         end if 
 
-     !  using CAF Parallel I/O
+         !  using CAF Parallel I/O
 	     x_size = (xmax-xmin+2*lx+1)
 	     z_size = (zmax-zmin+2*lz+1)
-             x_size_total = npx*x_size
-	     z_size_total = npz*z_size
-
-	     rec_lb(1)=1+((px-1)*x_size)
-	     rec_lb(2)=1+((pz-1)*z_size)
-
-	     rec_ub(1)=px*x_size
-	     rec_ub(2)=pz*z_size
 
 
-	     call get_rtc(srtc)
 	     sync all
+	     call get_rtc(srtc)
 
-             call caf_file_open(1, 'out.ver1', &
+             call caf_file_open(1, 'ver4.out', &
 	            MPI_MODE_WRONLY + MPI_MODE_CREATE, 2, &
-	     	    (/x_size_total, z_size_total/), &
-	     	     4, 1);
-
-	     call caf_file_write(1, rec_lb, &
-	     		    rec_ub, u, &
+	     	    (/npx, npz/), &
+	     	     4*x_size*z_size, 1);
+	     call caf_file_write(1, (/px,pz/), &
+	     		    (/px,pz/), u, &
 	     		    4*x_size*z_size)
-
 	     call caf_file_close(1)
+
 
 	     if (me == 1 ) then
 	       call get_rtc(ertc)
