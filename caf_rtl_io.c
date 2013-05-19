@@ -45,7 +45,8 @@
 		int recl;
 	}map[MAX_FILE_CNT];
 
-	int counter=0;
+	//TO DO: handling multiple opening and closing of files (add a linked list)
+	int counter=0;  // for counting number of files open
 
 	// Note: dims has extents for all dimensions but the last
 	void caf_file_open_(int* unit, char* file_name, int* access, int* ndim, int* dims, int* recl, int* async)
@@ -66,7 +67,6 @@
 		MPI_Type_commit(&(map[counter].etype));
 		MPI_File_open(MPI_COMM_WORLD, file_name , *access , MPI_INFO_NULL,  &(map[counter].fhdl));
 
-		//TODO: handling multiple opening and closing of files (add a linked list)
 		counter++;
 	}
 
